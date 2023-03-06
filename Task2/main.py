@@ -53,10 +53,9 @@ def isCrossing(view1):
     # 出口标志牌
     flag1 = 0
     # 可以设置上下限
-    thres1 = 10000
     ori2 = view1
     size2 = ori2.shape
-    roi2 = ori2[int(60 / 100 * size2[0]):int(70 / 100 * size2[0]), :]
+    roi2 = ori2[int(70 / 100 * size2[0]):int(80 / 100 * size2[0]), :]
     blur2 = cv2.GaussianBlur(roi2, (5, 5), 0)
     hsv_img2 = cv2.cvtColor(blur2, cv2.COLOR_BGR2HSV)
     inRange_hsv2 = cv2.inRange(hsv_img2, color_dist['white']['Lower'], color_dist['white']['Upper'])
@@ -66,23 +65,28 @@ def isCrossing(view1):
     kernel = np.ones((5, 5), dtype=np.uint8)
     erode_hsv2 = cv2.erode(dilate_hsv2, kernel, iterations=3)
 
-    edgePicture = cv2.Canny(erode_hsv2, 32, 180)
+    edgePicture = cv2.Canny(erode_hsv2, 50, 180)
 
-    # up_line = edgePicture[1, 1]
-    # mid_line
-    # bot_lien
+    up_line = edgePicture[2, :]
+    mid_line = edgePicture[int(len(edgePicture[:, 0]) / 2), :]
+    bot_lien = edgePicture[len(edgePicture[:, 0]) - 2, :]
 
-    sum_of_white = len((edgePicture[edgePicture == 255]))
-    if sum_of_white != 0:  print('sum_of_white', sum_of_white)
-    # if sum_of_white >= thres1:
-    #     flag1 = 1
-    # cv2.imshow("roi2", roi2)
+    up_white = len((up_line[up_line == 255]))
+    mid_white = len((mid_line[mid_line == 255]))
+    bot_white = len((bot_lien[bot_lien == 255]))
+    print('sum_of_white', up_white, mid_white, bot_white)
     cv2.imshow("hsv2", edgePicture)
     cv2.waitKey(1000)
 
-    if flag1 == 1:
+    if up_white > 8 and mid_white > 8 and bot_white > 8 and up_white + mid_white + bot_white < 48:
+        print('find!')
         return 1
-    return 0
+    else:
+        print('NOT find!')
+        return 0
+    # if sum_of_white >= thres1:
+    #     flag1 = 1
+    # cv2.imshow("roi2", roi2)
 
 
 # view2为左视角
