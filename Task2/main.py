@@ -75,8 +75,8 @@ def isCrossing(view1):
     mid_white = len((mid_line[mid_line == 255]))
     bot_white = len((bot_lien[bot_lien == 255]))
     print('sum_of_white', up_white, mid_white, bot_white)
-    cv2.imshow("hsv2", edgePicture)
-    cv2.waitKey(1000)
+    # cv2.imshow("hsv2", edgePicture)
+    # cv2.waitKey(1000)
 
     if up_white > 8 and mid_white > 8 and bot_white > 8 and up_white + mid_white + bot_white < 48:
         print('find!')
@@ -90,37 +90,39 @@ def isCrossing(view1):
 
 
 # view2为左视角
-def isRightTurning(view2):
-    # 路口识别
-    # 出口标志牌
-    # ori2=cv2.imread("./View218.jpg")
-    flag1 = 0
-
+def isRightTurning(viewback):
     # 可以设置上下限
-    thres = 420
-
-    ori2 = view2
+    ori2 = viewback
     size2 = ori2.shape
-    roi2 = ori2[int(0 / 575 * size2[0]):int(300 / 575 * size2[0]),
-           int(750 / 1023 * size2[1]):int(850 / 1023 * size2[1])]
+    roi2 = ori2[int(75 / 100 * size2[0]):int(85 / 100 * size2[0]), :]
     blur2 = cv2.GaussianBlur(roi2, (5, 5), 0)
     hsv_img2 = cv2.cvtColor(blur2, cv2.COLOR_BGR2HSV)
-    kernel = np.ones((3, 3), dtype=np.uint8)
-    erode_hsv2 = cv2.erode(hsv_img2, kernel, iterations=1)
-    kernel = np.ones((3, 3), dtype=np.uint8)
-    dilate_hsv2 = cv2.dilate(erode_hsv2, kernel, iterations=2)
-    inRange_hsv2 = cv2.inRange(dilate_hsv2, color_dist['white']['Lower'], color_dist['white']['Upper'])
-    sum_of_white = len((inRange_hsv2[inRange_hsv2 == 255]))
-    if sum_of_white != 0:  print('sum_of_white', sum_of_white)
-    if sum_of_white <= thres:
-        flag1 = 1
-    # cv2.imshow("roi2", roi2)
-    # cv2.imshow("hsv2", inRange_hsv2)
+    inRange_hsv2 = cv2.inRange(hsv_img2, color_dist['white']['Lower'], color_dist['white']['Upper'])
+
+    kernel = np.ones((5, 5), dtype=np.uint8)
+    dilate_hsv2 = cv2.dilate(inRange_hsv2, kernel, iterations=3)
+    kernel = np.ones((5, 5), dtype=np.uint8)
+    erode_hsv2 = cv2.erode(dilate_hsv2, kernel, iterations=3)
+
+    edgePicture = cv2.Canny(erode_hsv2, 32, 180)
+
+    up_line = edgePicture[2, :]
+    mid_line = edgePicture[int(len(edgePicture[:, 0]) / 2), :]
+    bot_lien = edgePicture[len(edgePicture[:, 0]) - 2, :]
+
+    up_white = len((up_line[up_line == 255]))
+    mid_white = len((mid_line[mid_line == 255]))
+    bot_white = len((bot_lien[bot_lien == 255]))
+    print('sum_of_white', up_white, mid_white, bot_white)
+    # cv2.imshow("hsv2", edgePicture)
     # cv2.waitKey(1000)
 
-    if flag1 == 1:
+    if up_white < 3 and mid_white < 3 and bot_white < 3:
+        print('find!')
         return 1
-    return 0
+    else:
+        print('NOT find!')
+        return 0
 
 
 class counter:
@@ -176,27 +178,31 @@ def image_to_speed(view1, view2, view3, view4, state):
 
     # 高速直行
     elif curState == 1:
-        left_speed = 1
-        right_speed = 1
+        left_speed = 2
+        right_speed = 2
 
         # 状态转移
         if isCrossing(viewFront):
+            counter1.setCounter(25)
             state.set(2)
 
     # 低速直行
     elif curState == 2:
-        left_speed = 0.5
-        right_speed = 0.5
+        left_speed = 1
+        right_speed = 1
 
         # 状态转移
-        if isRightTurning(viewLeft):
-            counter1.setCounter(10)
-            state.set(4)
+        if not counter1.isZero():
+            counter1.updateCounter()
+        else:
+            if isRightTurning(viewBack):
+                counter1.setCounter(15)
+                state.set(4)
 
-        # 状态转移
-        if isLeftTurning(viewFront):
-            counter1.setCounter(10)
-            state.set(5)
+        # # 状态转移
+        # if isLeftTurning(viewFront):
+        #     counter1.setCounter(10)
+        #     state.set(5)
 
     # 停车
     elif curState == 3:
@@ -210,8 +216,8 @@ def image_to_speed(view1, view2, view3, view4, state):
     # 右转
     elif curState == 4:
         counter1.updateCounter()
-        left_speed = 1.1
-        right_speed = 1
+        left_speed = 1.7
+        right_speed = 1.5
 
         if counter1.isZero():
             state.set(1)
