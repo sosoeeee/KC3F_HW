@@ -51,8 +51,7 @@ def isLeftTurning(view1):
 def isCrossing(view1):
     # 路口识别
     # 出口标志牌
-    # ori2=cv2.imread("./View218.jpg")
-    flag1 = flag2 = 0
+    flag1 = 0
     # 可以设置上下限
     thres1 = 420
     thres2 = 100 * 0.56
@@ -61,13 +60,13 @@ def isCrossing(view1):
     roi2 = ori2[int(70 / 100 * size2[0]):int(80 / 100 * size2[0]), :]
     blur2 = cv2.GaussianBlur(roi2, (5, 5), 0)
     hsv_img2 = cv2.cvtColor(blur2, cv2.COLOR_BGR2HSV)
-    # kernel = np.ones((3, 3), dtype=np.uint8)
-    # erode_hsv2 = cv2.erode(hsv_img2, kernel, iterations=1)
-    # kernel = np.ones((3, 3), dtype=np.uint8)
-    # # dilate_hsv2 = cv2.dilate(erode_hsv2, kernel, iterations=2)
-    inRange_hsv2 = cv2.inRange(hsv_img2, color_dist['white']['Lower'], color_dist['white']['Upper'])
-    sum_of_red = len((inRange_hsv2[inRange_hsv2 == 255]))
-    # if sum_of_red != 0:  print('sum_of_red', sum_of_red)
+    kernel = np.ones((3, 3), dtype=np.uint8)
+    dilate_hsv2 = cv2.dilate(hsv_img2, kernel, iterations=2)
+    kernel = np.ones((3, 3), dtype=np.uint8)
+    erode_hsv2 = cv2.erode(dilate_hsv2, kernel, iterations=1)
+    inRange_hsv2 = cv2.inRange(erode_hsv2, color_dist['white']['Lower'], color_dist['white']['Upper'])
+    sum_of_white = len((inRange_hsv2[inRange_hsv2 == 255]))
+    if sum_of_white != 0:  print('sum_of_red', sum_of_white)
     # if sum_of_red >= thres1:
     #     flag1 = 1
     # cv2.imshow("roi2", roi2)
@@ -145,9 +144,9 @@ class counter:
 
 def image_to_speed(view1, view2, view3, view4, state):
     viewFront = cv2.imdecode(view1, cv2.IMREAD_ANYCOLOR)
-    viewBack = cv2.imdecode(view1, cv2.IMREAD_ANYCOLOR)
-    viewLeft = cv2.imdecode(view2, cv2.IMREAD_ANYCOLOR)
-    viewRight = cv2.imdecode(view3, cv2.IMREAD_ANYCOLOR)
+    viewBack = cv2.imdecode(view2, cv2.IMREAD_ANYCOLOR)
+    viewLeft = cv2.imdecode(view3, cv2.IMREAD_ANYCOLOR)
+    viewRight = cv2.imdecode(view4, cv2.IMREAD_ANYCOLOR)
     left_speed = 0
     right_speed = 0
 
