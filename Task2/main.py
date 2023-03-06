@@ -12,7 +12,7 @@ color_dist = {'red': {'Lower': np.array([0, 60, 60]), 'Upper': np.array([6, 255,
               'green': {'Lower': np.array([35, 43, 35]), 'Upper': np.array([90, 255, 255])},
               'yellow': {'Lower': np.array([25, 160, 230]), 'Upper': np.array([45, 250, 255])},
               'yellow2': {'Lower': np.array([25, 100, 230]), 'Upper': np.array([45, 180, 255])},
-              'white': {'Lower': np.array([245, 245, 245]), 'Upper': np.array([255, 255, 255])}}
+              'white': {'Lower': np.array([0, 0, 221]), 'Upper': np.array([180, 30, 255])}}
 
 
 # 使用前视角识别红块左转
