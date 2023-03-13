@@ -5,15 +5,13 @@ import LineAngle
 
 kp = 0.03
 ki = 0
-kd = 0
 setpoint = 2
 
-
-def isStraight(imageFront):
-    angle_now = 0
-    angle_set = 20
-    delta = 0
-    delta_sum = 0
+def isStraight(imageFront, delta):
+    # angle_now = 0
+    # angle_set = 20
+    # delta = 0
+    # delta_sum = 0
 
     # ori = cv2.read("./pic.jpg")
 
@@ -37,22 +35,28 @@ def isStraight(imageFront):
 
     # 识别现在的delta
     # **********
-    angle_now = LineAngle.GetAngle(imageFront)
+    # angle_now = LineAngle.GetAngle(imageFront)
+    #
+    # if angle_now is -1:
+    #     return setpoint, setpoint
+    # else:
+    #     delta = angle_set - angle_now
+    #     # **********
+    #
+    #     delta_sum += delta
+    #     speedDiff = kp * delta + ki * delta_sum
+    #     if speedDiff > 0.5:
+    #         speedDiff = 0.5
+    #     elif speedDiff < -0.5:
+    #         speedDiff = -0.5
+    #     angle_left = setpoint - speedDiff
+    #     angle_right = setpoint + speedDiff
+    #     delta_before = delta
+
 
     if angle_now is -1:
         return setpoint, setpoint
     else:
-        delta = angle_set - angle_now
-        # **********
-
-        delta_sum += delta
         speedDiff = kp * delta + ki * delta_sum
-        if speedDiff > 0.5:
-            speedDiff = 0.5
-        elif speedDiff < -0.5:
-            speedDiff = -0.5
-        angle_left = setpoint - speedDiff
-        angle_right = setpoint + speedDiff
-        delta_before = delta
 
         return angle_left, angle_right

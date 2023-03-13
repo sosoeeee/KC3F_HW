@@ -40,9 +40,9 @@ def isLeftTurning(view1):
     if sum_of_red != 0:  print('sum_of_red', sum_of_red)
     if sum_of_red >= thres1:
         flag1 = 1
-    # cv2.imshow("roi2", roi2)
-    # cv2.imshow("hsv2", inRange_hsv2)
-    # cv2.waitKey(1000)
+    cv2.imshow("roi2", roi2)
+    cv2.imshow("hsv2", inRange_hsv2)
+    cv2.waitKey(1000)
 
     if flag1 == 1:
         return 1
@@ -132,7 +132,14 @@ def isRightTurning(viewback):
 
 # view2为左视角
 def getMidError(viewFront):
+    kp = 0.0009
+    ki = 0
+    error_sum = 0
 
+    leftspeed = 0
+    rightspeed = 0
+    speeddif = 0
+    speedset = 2.5
     # 可以设置上下限
     ori2 = viewFront
     size2 = ori2.shape
@@ -162,11 +169,30 @@ def getMidError(viewFront):
         firstIndex = up_line.index(255)
         up_line.reverse()
         lastIndex = length - up_line.index(255)
-        midIndex = (firstIndex+lastIndex)/2
-        error = length/2 - midIndex
+        midIndex = (firstIndex + lastIndex) / 2
+        error = length / 2 - midIndex
+        error_sum += error
         print('error', error)
-        cv2.imshow("hsv2", edgePicture)
-        cv2.waitKey(1000)
+        # cv2.imshow("hsv2", edgePicture)
+        # cv2.waitKey(1000)
+        if error > 15 or error < -15:
+            speeddif = kp * error + ki * error_sum
+            if speeddif >= 0.02:
+                speeddif = 0.02
+            elif speeddif <= -0.02:
+                speeddif = -0.02
+            leftspeed = 0.7 - speeddif
+            rightspeed = 0.7 + speeddif
+
+            return leftspeed, rightspeed
+        else:
+            leftspeed = setpoint
+            rightspeed = setpoint
+            return leftspeed, rightspeed
+    else:
+        leftspeed = 2.7
+        rightspeed = 2.7
+        return leftspeed, rightspeed
 
 
 class counter:
@@ -254,7 +280,7 @@ def image_to_speed(view1, view2, view3, view4, state):
 
         # 状态转移
         if rightFlag.getFlag() and isRightTurning(viewBack):
-            counter1.setCounter(25)
+            counter1.setCounter(16)
             counter2.setCounter(10)
             rightFlag.reverseFlag()
             state.set(3)
@@ -278,8 +304,8 @@ def image_to_speed(view1, view2, view3, view4, state):
         if not counter1.isZero():
             counter1.updateCounter()
 
-        left_speed = 1.61
-        right_speed = 1.5
+        left_speed = 1.57
+        right_speed = 1.4
 
         if counter1.isZero():
             counter2.updateCounter()
@@ -293,27 +319,28 @@ def image_to_speed(view1, view2, view3, view4, state):
     elif curState == 4:
         counter1.updateCounter()
         left_speed = 1
-        right_speed = 1.1
+        right_speed = 1.4
 
         if counter1.isZero():
             state.set(5)
 
     # 闭环直行
     elif curState == 5:
-        left_speed = 2
-        right_speed = 2
-        getMidError(viewFront)
+        # left_speed = 2
+        # right_speed = 2
+        # getMidError(viewFront)
+        left_speed, right_speed = getMidError(viewFront)
 
         # 状态转移
         if rightFlag.getFlag() and isRightTurning(getMidError):
-            counter1.setCounter(25)
+            counter1.setCounter(16)
             counter2.setCounter(10)
             rightFlag.reverseFlag()
             state.set(3)
         # 状态转移
-        # if isLeftTurning(viewFront):
-        #     counter1.setCounter(10)
-        #     state.set(5)
+        if isLeftTurning(viewFront):
+            counter1.setCounter(10)
+            state.set(5)
 
     print('cur state is', curState)
     # print('cur Flag is', rightFlag.getFlag() and 'Ture' or 'False')
