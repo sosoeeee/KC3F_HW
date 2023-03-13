@@ -147,22 +147,24 @@ def getMidError(viewFront):
     erode_hsv2 = cv2.erode(dilate_hsv2, kernel, iterations=3)
 
     edgePicture = cv2.Canny(erode_hsv2, 32, 180)
-    #
+
     up_line = edgePicture[5, :]
+    length = len(up_line[:])
     up_white = len((up_line[up_line == 255]))
-    firstIndex = np.argsort(up_line)[0]
-    lastIndex = np.argsort(up_line)[up_white-1]
-
-
+    #
     # mid_line = edgePicture[int(len(edgePicture[:, 0]) / 2), :]
     # bot_lien = edgePicture[len(edgePicture[:, 0]) - 3, :]
-
-
-
     # mid_white = len((mid_line[mid_line == 255]))
     # bot_white = len((bot_lien[bot_lien == 255]))
-    if 6 < up_white < 13:
-        print('midIndex', firstIndex, lastIndex)
+    if 6 < up_white < 11:
+        up_line = up_line.tolist()
+        print(up_line)
+        firstIndex = up_line.index(255)
+        up_line.reverse()
+        lastIndex = length - up_line.index(255)
+        midIndex = (firstIndex+lastIndex)/2
+        error = length/2 - midIndex
+        print('error', error)
         cv2.imshow("hsv2", edgePicture)
         cv2.waitKey(1000)
 
