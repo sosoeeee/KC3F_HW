@@ -117,6 +117,7 @@ def GetAngle(img):
 
     displayImg = cv2.cvtColor(inRange_hsv2, cv2.COLOR_GRAY2BGR)
     if lines is None:
+        print(-1)
         return -1
 
     for idx in range(len(lines)):
@@ -140,7 +141,7 @@ def GetAngle(img):
     print(outputAngle)
 
     cv2.imshow("hsv2", displayImg)
-    cv2.waitKey(0)
+    # cv2.waitKey(0)
     return outputAngle
 
 

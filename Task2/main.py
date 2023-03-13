@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import base64
 import math
+from pid import *
 
 log = []
 slow = 5
@@ -91,6 +92,7 @@ def isCrossing(view1):
 
 # view2为左视角
 def isRightTurning(viewback):
+    crossingFlag = globalFlag(2)
     # 可以设置上下限
     ori2 = viewback
     size2 = ori2.shape
@@ -117,7 +119,10 @@ def isRightTurning(viewback):
     # cv2.imshow("hsv2", edgePicture)
     # cv2.waitKey(1000)
 
-    if up_white < 3 and mid_white < 3 and bot_white < 3:
+    if not crossingFlag.getFlag() and up_white > 8 and mid_white > 8 and bot_white > 8 and up_white + mid_white + bot_white < 48:
+        crossingFlag.reverseFlag()
+
+    if crossingFlag.getFlag() and up_white < 3 and mid_white < 3 and bot_white < 3:
         print('find!')
         return 1
     else:
@@ -187,7 +192,9 @@ def image_to_speed(view1, view2, view3, view4, state):
 
     # create counter
     counter1 = counter(1)
+    counter2 = counter(2)
     rightFlag = globalFlag(1)
+    crossingFlag = globalFlag(2)
 
     curState = state.get()
     # state machine
@@ -196,40 +203,29 @@ def image_to_speed(view1, view2, view3, view4, state):
         left_speed = 0
         right_speed = 0
         rightFlag.setFlag(True)
+        crossingFlag.setFlag(False)
 
         # 状态转移
         state.set(1)
 
-    # 高速直行
+    # 开环直行
     elif curState == 1:
         left_speed = 2
         right_speed = 2
 
         # 状态转移
-        if isCrossing(viewFront):
-            counter1.setCounter(25)
-            state.set(2)
-
-    # 低速直行
-    elif curState == 2:
-        left_speed = 1
-        right_speed = 1
-
+        if rightFlag.getFlag() and isRightTurning(viewBack):
+            counter1.setCounter(24)
+            counter2.setCounter(15)
+            rightFlag.reverseFlag()
+            state.set(3)
         # 状态转移
-        if not counter1.isZero():
-            counter1.updateCounter()
-        else:
-            if rightFlag.getFlag() and isRightTurning(viewBack):
-                counter1.setCounter(15)
-                rightFlag.reverseFlag()
-                state.set(4)
-            # 状态转移
-            if isLeftTurning(viewFront):
-                counter1.setCounter(10)
-                state.set(5)
+        # if isLeftTurning(viewFront):
+        #     counter1.setCounter(10)
+        #     state.set(4)
 
     # 停车
-    elif curState == 3:
+    elif curState == 2:
         left_speed = 0
         right_speed = 0
 
@@ -238,25 +234,49 @@ def image_to_speed(view1, view2, view3, view4, state):
         #     state.set(3)
 
     # 右转
-    elif curState == 4:
-        counter1.updateCounter()
-        left_speed = 1.7
+    elif curState == 3:
+
+        if not counter1.isZero():
+            counter1.updateCounter()
+
+        left_speed = 1.6
         right_speed = 1.5
 
         if counter1.isZero():
-            state.set(1)
+            counter2.updateCounter()
+            left_speed = 2
+            right_speed = 2
+
+            if counter2.isZero():
+                state.set(5)
 
     # 左转
-    elif curState == 5:
+    elif curState == 4:
         counter1.updateCounter()
         left_speed = 1
         right_speed = 1.1
 
         if counter1.isZero():
-            state.set(1)
+            state.set(5)
+
+    # 闭环直行
+    elif curState == 5:
+        left_speed, right_speed = isStraight(viewFront)
+
+        # 状态转移
+        if rightFlag.getFlag() and isRightTurning(viewBack):
+            counter1.setCounter(24)
+            counter2.setCounter(15)
+            rightFlag.reverseFlag()
+            state.set(3)
+        # 状态转移
+        # if isLeftTurning(viewFront):
+        #     counter1.setCounter(10)
+        #     state.set(5)
 
     print('cur state is', curState)
-    print('cur Flag is', rightFlag.getFlag() and 'Ture' or 'False')
+    # print('cur Flag is', rightFlag.getFlag() and 'Ture' or 'False')
+    print('crossing Flag is', crossingFlag.getFlag() and 'Ture' or 'False')
     # print('cur counter is', counter1.getVal())
 
     return left_speed, right_speed, 0, 0
