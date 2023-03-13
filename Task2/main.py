@@ -40,8 +40,8 @@ def isLeftTurning(view1):
     if sum_of_red >= thres1:
         flag1 = 1
     # cv2.imshow("roi2", roi2)
-    cv2.imshow("hsv2", inRange_hsv2)
-    cv2.waitKey(1000)
+    # cv2.imshow("hsv2", inRange_hsv2)
+    # cv2.waitKey(1000)
 
     if flag1 == 1:
         return 1
@@ -155,6 +155,28 @@ class counter:
             return False
 
 
+class globalFlag:
+    def __init__(self, index):
+        self.index = index
+
+    def setFlag(self, flag):
+        info = open('flag' + str(self.index) + '.txt', 'w')
+        info.write(str(flag and 1 or 0))
+        info.close()
+
+    def reverseFlag(self):
+        info = open('flag' + str(self.index) + '.txt', 'r')
+        curFlag = int(info.read())
+        info.close()
+        info = open('flag' + str(self.index) + '.txt', 'w')
+        info.write(str((curFlag + 1) % 2))
+        info.close()
+
+    def getFlag(self):
+        info = open('flag' + str(self.index) + '.txt', 'r')
+        return int(info.read())
+
+
 def image_to_speed(view1, view2, view3, view4, state):
     viewFront = cv2.imdecode(view1, cv2.IMREAD_ANYCOLOR)
     viewBack = cv2.imdecode(view2, cv2.IMREAD_ANYCOLOR)
@@ -165,6 +187,7 @@ def image_to_speed(view1, view2, view3, view4, state):
 
     # create counter
     counter1 = counter(1)
+    rightFlag = globalFlag(1)
 
     curState = state.get()
     # state machine
@@ -172,6 +195,7 @@ def image_to_speed(view1, view2, view3, view4, state):
         # 初始化状态1所需的计数器
         left_speed = 0
         right_speed = 0
+        rightFlag.setFlag(True)
 
         # 状态转移
         state.set(1)
@@ -195,14 +219,14 @@ def image_to_speed(view1, view2, view3, view4, state):
         if not counter1.isZero():
             counter1.updateCounter()
         else:
-            if isRightTurning(viewBack):
+            if rightFlag.getFlag() and isRightTurning(viewBack):
                 counter1.setCounter(15)
+                rightFlag.reverseFlag()
                 state.set(4)
-
-        # # 状态转移
-        # if isLeftTurning(viewFront):
-        #     counter1.setCounter(10)
-        #     state.set(5)
+            # 状态转移
+            if isLeftTurning(viewFront):
+                counter1.setCounter(10)
+                state.set(5)
 
     # 停车
     elif curState == 3:
@@ -232,6 +256,7 @@ def image_to_speed(view1, view2, view3, view4, state):
             state.set(1)
 
     print('cur state is', curState)
+    print('cur Flag is', rightFlag.getFlag() and 'Ture' or 'False')
     # print('cur counter is', counter1.getVal())
 
     return left_speed, right_speed, 0, 0
