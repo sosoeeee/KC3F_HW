@@ -130,6 +130,43 @@ def isRightTurning(viewback):
         return 0
 
 
+# view2为左视角
+def getMidError(viewFront):
+
+    # 可以设置上下限
+    ori2 = viewFront
+    size2 = ori2.shape
+    roi2 = ori2[int(63 / 100 * size2[0]):int(77 / 100 * size2[0]), :]
+    blur2 = cv2.GaussianBlur(roi2, (5, 5), 0)
+    hsv_img2 = cv2.cvtColor(blur2, cv2.COLOR_BGR2HSV)
+    inRange_hsv2 = cv2.inRange(hsv_img2, color_dist['white']['Lower'], color_dist['white']['Upper'])
+
+    kernel = np.ones((5, 5), dtype=np.uint8)
+    dilate_hsv2 = cv2.dilate(inRange_hsv2, kernel, iterations=3)
+    kernel = np.ones((5, 5), dtype=np.uint8)
+    erode_hsv2 = cv2.erode(dilate_hsv2, kernel, iterations=3)
+
+    edgePicture = cv2.Canny(erode_hsv2, 32, 180)
+    #
+    up_line = edgePicture[5, :]
+    up_white = len((up_line[up_line == 255]))
+    firstIndex = np.argsort(up_line)[0]
+    lastIndex = np.argsort(up_line)[up_white-1]
+
+
+    # mid_line = edgePicture[int(len(edgePicture[:, 0]) / 2), :]
+    # bot_lien = edgePicture[len(edgePicture[:, 0]) - 3, :]
+
+
+
+    # mid_white = len((mid_line[mid_line == 255]))
+    # bot_white = len((bot_lien[bot_lien == 255]))
+    if 6 < up_white < 13:
+        print('midIndex', firstIndex, lastIndex)
+        cv2.imshow("hsv2", edgePicture)
+        cv2.waitKey(1000)
+
+
 class counter:
     def __init__(self, index):
         self.index = index
@@ -215,8 +252,8 @@ def image_to_speed(view1, view2, view3, view4, state):
 
         # 状态转移
         if rightFlag.getFlag() and isRightTurning(viewBack):
-            counter1.setCounter(24)
-            counter2.setCounter(15)
+            counter1.setCounter(25)
+            counter2.setCounter(10)
             rightFlag.reverseFlag()
             state.set(3)
         # 状态转移
@@ -239,7 +276,7 @@ def image_to_speed(view1, view2, view3, view4, state):
         if not counter1.isZero():
             counter1.updateCounter()
 
-        left_speed = 1.6
+        left_speed = 1.61
         right_speed = 1.5
 
         if counter1.isZero():
@@ -261,12 +298,14 @@ def image_to_speed(view1, view2, view3, view4, state):
 
     # 闭环直行
     elif curState == 5:
-        left_speed, right_speed = isStraight(viewFront)
+        left_speed = 2
+        right_speed = 2
+        getMidError(viewFront)
 
         # 状态转移
-        if rightFlag.getFlag() and isRightTurning(viewBack):
-            counter1.setCounter(24)
-            counter2.setCounter(15)
+        if rightFlag.getFlag() and isRightTurning(getMidError):
+            counter1.setCounter(25)
+            counter2.setCounter(10)
             rightFlag.reverseFlag()
             state.set(3)
         # 状态转移
