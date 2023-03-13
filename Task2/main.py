@@ -12,7 +12,7 @@ color_dist = {'red': {'Lower': np.array([0, 60, 60]), 'Upper': np.array([6, 255,
               'green': {'Lower': np.array([35, 43, 35]), 'Upper': np.array([90, 255, 255])},
               'yellow': {'Lower': np.array([25, 160, 230]), 'Upper': np.array([45, 250, 255])},
               'yellow2': {'Lower': np.array([25, 100, 230]), 'Upper': np.array([45, 180, 255])},
-              'white': {'Lower': np.array([0, 0, 200]), 'Upper': np.array([180, 30, 255])}}
+              'white': {'Lower': np.array([0, 0, 200]), 'Upper': np.array([255, 30, 255])}}
 
 
 # 使用前视角识别红块左转
@@ -82,6 +82,33 @@ def isCrossing(view1):
 
     if flag1 == 1:
         return 1
+    return 0
+
+
+def straightDetection(viewF, viewB, viewL, viewR):
+    ori2 = viewF
+    size2 = ori2.shape
+    roi2 = ori2[int(55 / 100 * size2[0]):int(99 / 100 * size2[0]), :]
+    blur2 = cv2.GaussianBlur(roi2, (5, 5), 0)
+    hsv_img2 = cv2.cvtColor(blur2, cv2.COLOR_BGR2HSV)
+
+    # # 闭运算填坑
+    kernel = np.ones((3, 3), dtype=np.uint8)
+    dilate_hsv2 = cv2.dilate(hsv_img2, kernel, iterations=2)
+    kernel = np.ones((3, 3), dtype=np.uint8)
+    erode_hsv2 = cv2.erode(dilate_hsv2, kernel, iterations=1)
+
+    edge = cv2.Canny(erode_hsv2, 120, 180)
+
+    # inRange_hsv2 = cv2.inRange(erode_hsv2, color_dist['white']['Lower'], color_dist['white']['Upper'])
+    # sum_of_white = len((inRange_hsv2[inRange_hsv2 == 255]))
+    # if sum_of_white != 0:  print('sum_of_white', sum_of_white)
+    # if sum_of_red >= thres1:
+    #     flag1 = 1
+    # cv2.imshow("roi2", roi2)
+    cv2.imshow("hsv2", edge)
+    cv2.waitKey(0)
+
     return 0
 
 
@@ -172,12 +199,14 @@ def image_to_speed(view1, view2, view3, view4, state):
 
     # 高速直行
     elif curState == 1:
-        left_speed = 1
-        right_speed = 1
+        left_speed = 3
+        right_speed = 3
+
+        straightDetection(viewFront, viewBack, viewLeft, viewRight)
 
         # 状态转移
-        if isCrossing(viewFront):
-            state.set(2)
+        # if isCrossing(viewBack):
+        #     state.set(2)
 
     # 低速直行
     elif curState == 2:
