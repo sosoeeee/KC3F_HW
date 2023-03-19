@@ -20,12 +20,12 @@ class GlobalVariable:
         self.name = name
 
     def SetVariable(self, value):
-        info = open('variable' + name + '.txt', 'w')
+        info = open('variable' + self.name + '.txt', 'w')
         info.write(str(value))
         info.close()
 
     def GetVariable(self):
-        info = open('variable' + name + '.txt', 'r')
+        info = open('variable' + self.name + '.txt', 'r')
         return float(info.read())
 
 def VThin(image, array):
@@ -275,8 +275,8 @@ def GetAngleByVanishingPoint(img):
         angleError = math.pi/2 - angle
     print(angleError)
 
-    if abs(lastError - angleError) > 0.4:
-        angleError = lastError
+    # if abs(lastError - angleError) > 0.4:
+    #     angleError = lastError
 
     lastErrorVariable.SetVariable(angleError)
     return angleError

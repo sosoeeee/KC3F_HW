@@ -4,6 +4,7 @@ import numpy as np
 import base64
 import math
 from pid import *
+from LineAngle import *
 
 log = []
 slow = 5
@@ -40,9 +41,9 @@ def isLeftTurning(view1):
     if sum_of_red != 0:  print('sum_of_red', sum_of_red)
     if sum_of_red >= thres1:
         flag1 = 1
-    cv2.imshow("roi2", roi2)
-    cv2.imshow("hsv2", inRange_hsv2)
-    cv2.waitKey(1000)
+    # cv2.imshow("roi2", roi2)
+    # cv2.imshow("hsv2", inRange_hsv2)
+    # cv2.waitKey(1000)
 
     if flag1 == 1:
         return 1
@@ -132,9 +133,11 @@ def isRightTurning(viewback):
 
 # view2为左视角
 def getMidError(viewFront):
-    kp = 0.0009
+    kp = 0.0005
     ki = 0
     error_sum = 0
+
+    setpoint = 2
 
     leftspeed = 0
     rightspeed = 0
@@ -158,6 +161,9 @@ def getMidError(viewFront):
     up_line = edgePicture[5, :]
     length = len(up_line[:])
     up_white = len((up_line[up_line == 255]))
+
+    error_angle = -GetAngleByVanishingPoint(viewFront)
+    print('error_angle', error_angle)
     #
     # mid_line = edgePicture[int(len(edgePicture[:, 0]) / 2), :]
     # bot_lien = edgePicture[len(edgePicture[:, 0]) - 3, :]
@@ -181,18 +187,23 @@ def getMidError(viewFront):
                 speeddif = 0.02
             elif speeddif <= -0.02:
                 speeddif = -0.02
-            leftspeed = 0.7 - speeddif
-            rightspeed = 0.7 + speeddif
-
-            return leftspeed, rightspeed
         else:
-            leftspeed = setpoint
-            rightspeed = setpoint
-            return leftspeed, rightspeed
+            speeddif = 0
     else:
-        leftspeed = 2.7
-        rightspeed = 2.7
-        return leftspeed, rightspeed
+        speeddif = 0
+
+    if speeddif is not 0:
+        leftspeed = 0.7 - speeddif
+        rightspeed = 0.7 + speeddif
+    else:
+        leftspeed = setpoint
+        rightspeed = setpoint
+
+    # leftspeed = setpoint - error_angle * 0.3
+    # rightspeed = setpoint + error_angle * 0.3
+
+    return leftspeed, rightspeed
+
 
 
 class counter:
@@ -270,6 +281,10 @@ def image_to_speed(view1, view2, view3, view4, state):
         rightFlag.setFlag(True)
         crossingFlag.setFlag(False)
 
+        info = open('variable' + "last_Error" + '.txt', 'w')
+        info.write(str(0))
+        info.close()
+
         # 状态转移
         state.set(1)
 
@@ -280,7 +295,7 @@ def image_to_speed(view1, view2, view3, view4, state):
 
         # 状态转移
         if rightFlag.getFlag() and isRightTurning(viewBack):
-            counter1.setCounter(16)
+            counter1.setCounter(25)
             counter2.setCounter(10)
             rightFlag.reverseFlag()
             state.set(3)
@@ -304,8 +319,8 @@ def image_to_speed(view1, view2, view3, view4, state):
         if not counter1.isZero():
             counter1.updateCounter()
 
-        left_speed = 1.57
-        right_speed = 1.4
+        left_speed = 1.61
+        right_speed = 1.5
 
         if counter1.isZero():
             counter2.updateCounter()
@@ -332,8 +347,8 @@ def image_to_speed(view1, view2, view3, view4, state):
         left_speed, right_speed = getMidError(viewFront)
 
         # 状态转移
-        if rightFlag.getFlag() and isRightTurning(getMidError):
-            counter1.setCounter(16)
+        if rightFlag.getFlag() and isRightTurning(viewBack):
+            counter1.setCounter(25)
             counter2.setCounter(10)
             rightFlag.reverseFlag()
             state.set(3)
