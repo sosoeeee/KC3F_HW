@@ -15,6 +15,19 @@ color_dist = {'red': {'Lower': np.array([0, 60, 60]), 'Upper': np.array([6, 255,
               'white': {'Lower': np.array([0, 0, 200]), 'Upper': np.array([180, 30, 255])}}
 
 
+class GlobalVariable:
+    def __init__(self, name):
+        self.name = name
+
+    def SetVariable(self, value):
+        info = open('variable' + name + '.txt', 'w')
+        info.write(str(value))
+        info.close()
+
+    def GetVariable(self):
+        info = open('variable' + name + '.txt', 'r')
+        return float(info.read())
+
 def VThin(image, array):
     rows, cols = image.shape
     NEXT = 1
@@ -145,6 +158,9 @@ def GetAngle(img):
 
 
 def GetAngleByVanishingPoint(img):
+    lastErrorVariable = GlobalVariable("last_Error")
+    lastError = lastErrorVariable.GetVariable()
+
     ori2 = img
     size2 = ori2.shape
     roi2 = ori2[int(1 / 100 * size2[0]):int(99 / 100 * size2[0]), int(1 / 100 * size2[1]):int(99 / 100 * size2[1])]
@@ -252,11 +268,17 @@ def GetAngleByVanishingPoint(img):
     # cv2.circle(displayImg, (int(VanishingPoint[0]), int(VanishingPoint[1])), 1, (0, 0, 255), -1)
     # cv2.imshow("img", displayImg)
     # cv2.waitKey(0)
-
-    angle = math.atan2(VanishingPoint[1], VanishingPoint[0] - edge.shape[1] / 2)
-
-    angleError = math.pi/2 - angle
+    if VanishingPoint is None:
+        angleError = 0
+    else:
+        angle = math.atan2(VanishingPoint[1], VanishingPoint[0] - edge.shape[1] / 2)
+        angleError = math.pi/2 - angle
     print(angleError)
+
+    if abs(lastError - angleError) > 0.4:
+        angleError = lastError
+
+    lastErrorVariable.SetVariable(angleError)
     return angleError
 
 
