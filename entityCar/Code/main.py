@@ -43,11 +43,16 @@ def GetWheelSpeed(dots, centre, para, controller):
     error = np.dot(dots[:, 0], para)
     controlVariable = controller.update(error)
     # print(controlVariable)
-    lSpeed = 25 - controlVariable
-    rSpeed = 25 + controlVariable
+    lSpeed = 20 - controlVariable
+    rSpeed = 20 + controlVariable
 
-    # return [lSpeed, rSpeed]
-    return [0, 0]
+    if lSpeed > 25:
+        lSpeed = 25
+    if rSpeed > 25:
+        rSpeed = 25
+
+    return [lSpeed, rSpeed]
+    # return [0, 0]
 
 
 class Path:
@@ -117,8 +122,9 @@ def main():
     cap = cv2.VideoCapture(0)
     lastTime = time.time()
     pathObserver = Path()
-    controller = PID(0.15, 0, 10)
+    controller = PID(0.15, 0, 0)
     while True:
+        # 图像采集
         _, frame = cap.read()
         # 转换为灰度图
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -131,53 +137,62 @@ def main():
         binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
         binary_ROI = binary[140:480, 220:420]
 
+        # 检测十字路口
+        crossFlag = False
         # Harris角点检测
         dst = cv2.cornerHarris(binary_ROI, 10, 3, 0.18)
-
-        color_gray = cv2.cvtColor(binary_ROI, cv2.COLOR_GRAY2BGR)
-        color_gray[dst > 0.4 * dst.max()] = [0, 0, 255]
+        # 绘图
+        # color_gray = cv2.cvtColor(binary_ROI, cv2.COLOR_GRAY2BGR)
+        # color_gray[dst > 0.4 * dst.max()] = [0, 0, 255]
         boolMar = dst > 0.4 * dst.max()
         loc = np.transpose(np.nonzero(boolMar))
         loc_filter = []
         if len(loc) > 0:
             loc_filter = [loc[0]]
             for i in range(len(loc) - 1):
+                nearPoint = False
                 for point in loc_filter:
-                    if abs(loc[i + 1][0] - point[0]) < 10 or abs(loc[i + 1][1] - point[1]) < 10:
+                    if abs(loc[i + 1][0] - point[0]) < 10 and abs(loc[i + 1][1] - point[1]) < 10:
+                        nearPoint = True
                         break
-                loc_filter.append(loc[i+1])
-        print("raw", len(loc))
-        print("filter", len(loc_filter))
-        # print(loc)
-        # print('--------------------')
+                if not nearPoint:
+                    loc_filter.append(loc[i+1])
+        if len(loc_filter) == 4:
+            avrPoint = np.sum(loc_filter, axis=0) / 4
+            if avrPoint[0] > 100:
+                crossFlag = True
 
-        # # canny边缘检测
-        # canny = cv2.Canny(binary_ROI, 50, 150)
-        # # 提取图像局部
-        # length, width = canny.shape
-        # # 轨迹提取
-        # pathObserver.recPath(canny_cut, filter=True)
-        # # path = pathObserver.filterPath()
-        # path = pathObserver.rawPath()
-        # # 轨迹绘制
-        # color_gray = cv2.cvtColor(canny_cut, cv2.COLOR_GRAY2BGR)
-        # color_gray = pathObserver.drawPath(color_gray)
-        #
-        # # 轨迹控制
-        # if len(path) > 0:
-        #     # 计算轨迹中心
-        #     path = np.array(path)
-        #     centre = int(width/2)
-        #     # 计算轨迹方向
-        #     weight = float(1.0 / len(path))
-        #     para = np.ones(len(path)) * weight
-        #     # 计算轮速
-        #     wheelSpeed = GetWheelSpeed(path, centre, para, controller)
-        #     # 控制小车
-        #     car.setSpeed(wheelSpeed[0], wheelSpeed[1])
+        # 巡线轨迹提取
+        # canny边缘检测
+        canny = cv2.Canny(binary_ROI, 50, 150)
+        # 提取图像局部
+        length, width = canny.shape
+        # 轨迹提取
+        pathObserver.recPath(canny, filter=True)
+        # path = pathObserver.filterPath()
+        path = pathObserver.rawPath()
+        # 轨迹绘制
+        color_gray = cv2.cvtColor(canny, cv2.COLOR_GRAY2BGR)
+        color_gray = pathObserver.drawPath(color_gray)
 
-        cv2.imshow("image", color_gray)
-        # # cv2.imshow("image1", canny)
+        # 轨迹控制
+        if len(path) > 0:
+            # 计算轨迹中心
+            path = np.array(path)
+            centre = int(width/2)
+            # 计算轨迹方向
+            weight = float(1.0 / len(path))
+            para = np.ones(len(path)) * weight
+            # 计算轮速
+            wheelSpeed = GetWheelSpeed(path, centre, para, controller)
+            # 控制小车
+            car.setSpeed(wheelSpeed[0], wheelSpeed[1])
+
+        if crossFlag:
+            car.setSpeed(0, 0)
+
+        # cv2.imshow("image", color_gray)
+        cv2.imshow("image1", color_gray)
         cv2.waitKey(1)
 
         # tmpTime = time.time()

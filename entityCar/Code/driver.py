@@ -13,9 +13,9 @@ class driver:
         return self.ser.read(20).decode()
 
     def read_battery(self):
-        self.ser.write(("battery?\r\n").encode())
+        self.ser.write("battery?\r\n".encode())
         return self.ser.read(20).decode()
 
     def get_sensor(self):
-        self.ser.write(("ob_sensor?\r\n").encode())
+        self.ser.write("ob_sensor?\r\n".encode())
         return self.ser.read(20).decode()
