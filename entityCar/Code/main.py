@@ -4,6 +4,8 @@ import cv2
 from driver import driver
 import undistortionLib
 import time
+from letterRec import *
+from circleRec import *
 
 
 class Car:
@@ -196,7 +198,7 @@ def main():
             crossFlag = crossRec(binary_ROI)
 
             # 检测墙面
-            wallFlag = False
+            wallFlag, frame = circleRec(caliber_gray)
 
             # 轨迹控制
             if len(path) > 0:
@@ -225,8 +227,19 @@ def main():
 
         elif state == 'cross':
             # Hough圆检测
+            flag, frame = circleRec(caliber_gray)
 
-            #
+            if flag:
+                if getLetterRec(frame, left_template, right_template) == '左':
+                    timerStraight(0, 0.5)
+                    timerTurn(0, 1, 0.5)
+                    state = 'normal'
+                else:
+                    timerStraight(0, 0.5)
+                    timerTurn(0, 0, 0.5)
+                    state = 'normal'
+            else:
+                state = 'normal'
 
         elif state == 'wall':
             timerTurn(0, 0, 0.5)
