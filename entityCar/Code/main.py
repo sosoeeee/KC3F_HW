@@ -116,6 +116,39 @@ def timerTurn(speed, direct, t):
     while (time.time() - startTime) < t:
         car.setSpeed(speed + offset, speed - offset)
 
+def timerStraight(speed, t):
+    startTime = time.time()
+    while (time.time() - startTime) < t:
+        car.setSpeed(speed, speed)
+
+def crossRec(binaryImg):
+    # 检测十字路口
+    crossFlag = False
+    # Harris角点检测
+    dst = cv2.cornerHarris(binaryImg, 10, 3, 0.18)
+    # 绘图
+    # color_gray = cv2.cvtColor(binary_ROI, cv2.COLOR_GRAY2BGR)
+    # color_gray[dst > 0.4 * dst.max()] = [0, 0, 255]
+    boolMar = dst > 0.4 * dst.max()
+    loc = np.transpose(np.nonzero(boolMar))
+    loc_filter = []
+    if len(loc) > 0:
+        loc_filter = [loc[0]]
+        for i in range(len(loc) - 1):
+            nearPoint = False
+            for point in loc_filter:
+                if abs(loc[i + 1][0] - point[0]) < 10 and abs(loc[i + 1][1] - point[1]) < 10:
+                    nearPoint = True
+                    break
+            if not nearPoint:
+                loc_filter.append(loc[i + 1])
+    if len(loc_filter) == 4:
+        avrPoint = np.sum(loc_filter, axis=0) / 4
+        if avrPoint[0] > 100:
+            crossFlag = True
+
+    return crossFlag
+
 
 def main():
     global car
@@ -123,6 +156,13 @@ def main():
     lastTime = time.time()
     pathObserver = Path()
     controller = PID(0.15, 0, 0)
+
+    # STATE = {'normal', 'wall', 'cross'}
+    state = 'normal'
+
+    left_template = "template/left_template.jpg"
+    right_template = "template/right_template.jpg"
+
     while True:
         # 图像采集
         _, frame = cap.read()
@@ -137,63 +177,67 @@ def main():
         binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
         binary_ROI = binary[140:480, 220:420]
 
-        # 检测十字路口
-        crossFlag = False
-        # Harris角点检测
-        dst = cv2.cornerHarris(binary_ROI, 10, 3, 0.18)
-        # 绘图
-        # color_gray = cv2.cvtColor(binary_ROI, cv2.COLOR_GRAY2BGR)
-        # color_gray[dst > 0.4 * dst.max()] = [0, 0, 255]
-        boolMar = dst > 0.4 * dst.max()
-        loc = np.transpose(np.nonzero(boolMar))
-        loc_filter = []
-        if len(loc) > 0:
-            loc_filter = [loc[0]]
-            for i in range(len(loc) - 1):
-                nearPoint = False
-                for point in loc_filter:
-                    if abs(loc[i + 1][0] - point[0]) < 10 and abs(loc[i + 1][1] - point[1]) < 10:
-                        nearPoint = True
-                        break
-                if not nearPoint:
-                    loc_filter.append(loc[i+1])
-        if len(loc_filter) == 4:
-            avrPoint = np.sum(loc_filter, axis=0) / 4
-            if avrPoint[0] > 100:
-                crossFlag = True
+        if state == 'normal':
+            # 巡线轨迹提取
+            # canny边缘检测
+            canny = cv2.Canny(binary_ROI, 50, 150)
+            # 提取图像局部
+            length, width = canny.shape
+            # 轨迹提取
+            pathObserver.recPath(canny, filter=True)
+            # path = pathObserver.filterPath()
+            path = pathObserver.rawPath()
 
-        # 巡线轨迹提取
-        # canny边缘检测
-        canny = cv2.Canny(binary_ROI, 50, 150)
-        # 提取图像局部
-        length, width = canny.shape
-        # 轨迹提取
-        pathObserver.recPath(canny, filter=True)
-        # path = pathObserver.filterPath()
-        path = pathObserver.rawPath()
-        # 轨迹绘制
-        color_gray = cv2.cvtColor(canny, cv2.COLOR_GRAY2BGR)
-        color_gray = pathObserver.drawPath(color_gray)
+            # 轨迹绘制来显示图像
+            color_gray = cv2.cvtColor(canny, cv2.COLOR_GRAY2BGR)
+            color_gray = pathObserver.drawPath(color_gray)
 
-        # 轨迹控制
-        if len(path) > 0:
-            # 计算轨迹中心
-            path = np.array(path)
-            centre = int(width/2)
-            # 计算轨迹方向
-            weight = float(1.0 / len(path))
-            para = np.ones(len(path)) * weight
-            # 计算轮速
-            wheelSpeed = GetWheelSpeed(path, centre, para, controller)
-            # 控制小车
-            car.setSpeed(wheelSpeed[0], wheelSpeed[1])
+            # 检测十字路口
+            crossFlag = crossRec(binary_ROI)
 
-        if crossFlag:
-            car.setSpeed(0, 0)
+            # 检测墙面
+            wallFlag = False
+
+            # 轨迹控制
+            if len(path) > 0:
+                # 计算轨迹中心
+                path = np.array(path)
+                centre = int(width/2)
+                # 计算轨迹方向
+                weight = float(1.0 / len(path))
+                para = np.ones(len(path)) * weight
+                # 计算轮速
+                wheelSpeed = GetWheelSpeed(path, centre, para, controller)
+                # 控制小车
+                car.setSpeed(wheelSpeed[0], wheelSpeed[1])
+
+            if crossFlag:
+                state = 'cross'
+                car.setSpeed(0, 0)
+
+             if wallFlag:
+                state = 'wall'
+                car.setSpeed(0, 0)
+
+            # 显示图像
+            cv2.imshow("image1", color_gray)
+            cv2.waitKey(1)
+
+        elif state == 'cross':
+            # Hough圆检测
+
+            #
+
+        elif state == 'wall':
+            timerTurn(0, 0, 0.5)
+            timerStraight(0, 0.5)
+            timerTurn(0, 1, 0.5)
+            timerStraight(0, 0.5)
+            timerTurn(0, 0, 0.5)
+            state = 'normal'
+
 
         # cv2.imshow("image", color_gray)
-        cv2.imshow("image1", color_gray)
-        cv2.waitKey(1)
 
         # tmpTime = time.time()
         # print(1 / (tmpTime - lastTime))
