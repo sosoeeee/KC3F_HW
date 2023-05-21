@@ -45,8 +45,8 @@ def GetWheelSpeed(dots, centre, para, controller):
     error = np.dot(dots[:, 0], para)
     controlVariable = controller.update(error)
     # print(controlVariable)
-    lSpeed = 20 - controlVariable
-    rSpeed = 20 + controlVariable
+    lSpeed = 15 - controlVariable
+    rSpeed = 15 + controlVariable
 
     if lSpeed > 25:
         lSpeed = 25
@@ -112,25 +112,31 @@ class Path:
 def timerTurn(speed, direct, t):
     startTime = time.time()
     if direct:
-        offset = 5
+        speed = speed
     else:
-        offset = -5
+        speed = -speed
     while (time.time() - startTime) < t:
-        car.setSpeed(speed + offset, speed - offset)
+        car.setSpeed(speed, -speed)
+
 
 def timerStraight(speed, t):
     startTime = time.time()
     while (time.time() - startTime) < t:
         car.setSpeed(speed, speed)
 
+
 def crossRec(binaryImg):
     # 检测十字路口
     crossFlag = False
     # Harris角点检测
     dst = cv2.cornerHarris(binaryImg, 10, 3, 0.18)
-    # 绘图
-    # color_gray = cv2.cvtColor(binary_ROI, cv2.COLOR_GRAY2BGR)
+
+    # # 绘图
+    # color_gray = cv2.cvtColor(binaryImg, cv2.COLOR_GRAY2BGR)
     # color_gray[dst > 0.4 * dst.max()] = [0, 0, 255]
+    # cv2.imshow('dst', color_gray)
+    # cv2.waitKey(1)
+
     boolMar = dst > 0.4 * dst.max()
     loc = np.transpose(np.nonzero(boolMar))
     loc_filter = []
@@ -144,6 +150,9 @@ def crossRec(binaryImg):
                     break
             if not nearPoint:
                 loc_filter.append(loc[i + 1])
+
+    # print(len(loc_filter))
+
     if len(loc_filter) == 4:
         avrPoint = np.sum(loc_filter, axis=0) / 4
         if avrPoint[0] > 100:
@@ -157,15 +166,20 @@ def main():
     cap = cv2.VideoCapture(0)
     lastTime = time.time()
     pathObserver = Path()
-    controller = PID(0.15, 0, 0)
+    controller = PID(0.07, 0, 1)
 
     # STATE = {'normal', 'wall', 'cross'}
     state = 'normal'
 
-    left_template = "template/left_template.jpg"
-    right_template = "template/right_template.jpg"
+    left_template = cv2.imread("template/left_template.jpg")
+    left_template = cv2.cvtColor(left_template, cv2.COLOR_BGR2GRAY)
+    right_template = cv2.imread("template/right_template.jpg")
+    right_template = cv2.cvtColor(right_template, cv2.COLOR_BGR2GRAY)
+
+    wallRecTimer = time.time()
 
     while True:
+        currentTime = time.time()
         # 图像采集
         _, frame = cap.read()
         # 转换为灰度图
@@ -178,6 +192,10 @@ def main():
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
         binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
         binary_ROI = binary[140:480, 220:420]
+
+        # 图像显示
+        canny = cv2.Canny(binary_ROI, 50, 150)
+        color_gray = cv2.cvtColor(canny, cv2.COLOR_GRAY2BGR)
 
         if state == 'normal':
             # 巡线轨迹提取
@@ -195,16 +213,20 @@ def main():
             color_gray = pathObserver.drawPath(color_gray)
 
             # 检测十字路口
-            crossFlag = crossRec(binary_ROI)
+            crossFlag = crossRec(binary_ROI[100:339, :])
 
             # 检测墙面
-            wallFlag, frame = circleRec(caliber_gray)
+            if currentTime - wallRecTimer > 4:
+                wallROI = caliber_gray[:, 220:420]
+                wallFlag, frame = wallRec(wallROI)
+            else:
+                wallFlag = False
 
             # 轨迹控制
             if len(path) > 0:
                 # 计算轨迹中心
                 path = np.array(path)
-                centre = int(width/2)
+                centre = int(width / 2)
                 # 计算轨迹方向
                 weight = float(1.0 / len(path))
                 para = np.ones(len(path)) * weight
@@ -214,16 +236,13 @@ def main():
                 car.setSpeed(wheelSpeed[0], wheelSpeed[1])
 
             if crossFlag:
+                print('cross')
                 state = 'cross'
                 car.setSpeed(0, 0)
 
-             if wallFlag:
+            if wallFlag:
                 state = 'wall'
                 car.setSpeed(0, 0)
-
-            # 显示图像
-            cv2.imshow("image1", color_gray)
-            cv2.waitKey(1)
 
         elif state == 'cross':
             # Hough圆检测
@@ -231,26 +250,35 @@ def main():
 
             if flag:
                 if getLetterRec(frame, left_template, right_template) == '左':
-                    timerStraight(0, 0.5)
-                    timerTurn(0, 1, 0.5)
+                    print('left')
+                    timerStraight(25, 2)
+                    timerTurn(25, 1, 1.4)
                     state = 'normal'
                 else:
-                    timerStraight(0, 0.5)
-                    timerTurn(0, 0, 0.5)
+                    print('right')
+                    timerStraight(25, 2)
+                    timerTurn(25, 0, 1.4)
                     state = 'normal'
             else:
                 state = 'normal'
 
         elif state == 'wall':
-            timerTurn(0, 0, 0.5)
-            timerStraight(0, 0.5)
-            timerTurn(0, 1, 0.5)
-            timerStraight(0, 0.5)
-            timerTurn(0, 0, 0.5)
+            timerTurn(25, 0, 1.4)
+            timerStraight(25, 2)
+            timerTurn(25, 1, 1.4)
+            timerStraight(25, 4)
+            timerTurn(25, 1, 1.4)
+            timerStraight(25, 2)
+            timerTurn(25, 0, 1.2)
+            print('finish')
+            cv2.destroyAllWindows()
+            wallRecTimer = time.time()
             state = 'normal'
 
-
         # cv2.imshow("image", color_gray)
+        # 显示图像
+        cv2.imshow("image1", caliber_gray[:, 220:420])
+        cv2.waitKey(1)
 
         # tmpTime = time.time()
         # print(1 / (tmpTime - lastTime))
