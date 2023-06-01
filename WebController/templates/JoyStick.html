@@ -1,0 +1,137 @@
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Online Joystick</title>
+    <style>
+        #container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            border: 1px solid black;
+        }
+
+        #ball {
+            position: absolute;
+            left: 225px;
+            top: 225px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: red;
+        }
+
+        #joystick {
+            position: absolute;
+            left: 0px;
+            bottom: 0px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: gray;
+        }
+
+        #stick {
+            position: absolute;
+            left: 25px;
+            top: 25px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: blue;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="ball"></div>
+        <div id="joystick">
+            <div id="stick"></div>
+        </div>
+    </div>
+    <script>
+        // 获取元素
+        var ball = document.getElementById("ball");
+        var joystick = document.getElementById("joystick");
+        var stick = document.getElementById("stick");
+
+        // 定义变量
+        var joystickRadius = joystick.offsetWidth / 2; // 摇杆半径
+        var stickRadius = stick.offsetWidth / 2; // 摇杆头半径
+        var ballRadius = ball.offsetWidth / 2; // 小球半径
+        var containerWidth = container.offsetWidth; // 容器宽度
+        var containerHeight = container.offsetHeight; // 容器高度
+        var speed = 5; // 小球移动速度
+        var dx = 0; // 小球水平方向移动距离
+        var dy = 0; // 小球垂直方向移动距离
+
+        // 定义函数
+        // 计算两点之间的距离
+        function distance(x1, y1, x2, y2) {
+            return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+        }
+
+        // 计算两点之间的角度
+        function angle(x1, y1, x2, y2) {
+            return Math.atan2(y2 - y1, x2 - x1);
+        }
+
+        // 计算摇杆头的位置
+        function stickPosition(x, y) {
+            var dist = distance(x, y, joystickRadius, joystickRadius); // 鼠标位置和摇杆中心的距离
+            var ang = angle(x, y, joystickRadius, joystickRadius); // 鼠标位置和摇杆中心的角度
+            if (dist > joystickRadius - stickRadius) { // 如果鼠标位置超出摇杆范围，限制摇杆头位置在边缘
+                dist = joystickRadius - stickRadius;
+                x = joystickRadius + dist * Math.cos(ang);
+                y = joystickRadius + dist * Math.sin(ang);
+            }
+            stick.style.left = x - stickRadius + "px"; // 设置摇杆头的水平位置
+            stick.style.top = y - stickRadius + "px"; // 设置摇杆头的垂直位置
+            dx = dist * Math.cos(ang) * speed / (joystickRadius - stickRadius); // 计算小球水平方向移动距离
+            dy = dist * Math.sin(ang) * speed / (joystickRadius - stickRadius); // 计算小球垂直方向移动距离
+        }
+
+        // 计算小球的位置
+        function ballPosition() {
+            var x = parseInt(ball.style.left) + dx; // 小球水平位置加上移动距离
+            var y = parseInt(ball.style.top) + dy; //// 小球垂直位置加上移动距离
+            if (x < 0) { // 如果小球超出容器左边界，限制小球位置在左边界
+                x = 0;
+            }
+            if (x > containerWidth - ballRadius * 2) { // 如果小球超出容器右边界，限制小球位置在右边界
+                x = containerWidth - ballRadius * 2;
+            }
+            if (y < 0) { // 如果小球超出容器上边界，限制小球位置在上边界
+                y = 0;
+            }
+            if (y > containerHeight - ballRadius * 2) { // 如果小球超出容器下边界，限制小球位置在下边界
+                y = containerHeight - ballRadius * 2;
+            }
+            ball.style.left = x + "px"; // 设置小球的水平位置
+            ball.style.top = y + "px"; // 设置小球的垂直位置
+        }
+
+        // 定义事件监听器
+        // 当鼠标按下摇杆时，开始移动摇杆头和小球
+        joystick.addEventListener("mousedown", function(event) {
+            stickPosition(event.offsetX, event.offsetY); // 计算摇杆头的位置
+            var timer = setInterval(ballPosition, 50); // 每隔50毫秒计算一次小球的位置
+            // 当鼠标移动时，更新摇杆头和小球的位置
+            joystick.addEventListener("mousemove", function(event) {
+                stickPosition(event.offsetX, event.offsetY);
+            });
+            // 当鼠标松开或离开摇杆时，停止移动摇杆头和小球，并恢复摇杆头的位置
+            joystick.addEventListener("mouseup", function() {
+                clearInterval(timer);
+                stickPosition(joystickRadius, joystickRadius);
+            });
+            joystick.addEventListener("mouseleave", function() {
+                clearInterval(timer);
+                stickPosition(joystickRadius, joystickRadius);
+            });
+        });
+    </script>
+</body>
+</html>
+
+
