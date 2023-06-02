@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request
+# encoding: utf-8
+from flask import Flask, render_template, request, jsonify
 import time
 
 app = Flask(__name__)
@@ -20,7 +21,7 @@ def index():
 @app.route('/GetVel', methods=['GET'])
 def vel():
     global V
-    return V
+    return jsonify(V)
 
 
 @app.route('/send-transV', methods=['POST'])
@@ -44,4 +45,4 @@ def get_angleV():
 
 
 # app.run(host='0.0.0.0', port=3009)
-app.run(host='0.0.0.0')
+app.run(host='192.168.137.59')

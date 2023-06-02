@@ -164,19 +164,21 @@
             var distance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
             var angle = Math.atan2(y, x);
 
+            if (distance <= radius) {
+                var stickX = x + joystick1.offsetWidth / 2;
+                var stickY = y + joystick1.offsetHeight / 2;
+            } else {
+                x = radius * Math.cos(angle);
+                y = radius * Math.sin(angle);
+                var stickX = radius * Math.cos(angle) + joystick1.offsetWidth / 2;
+                var stickY = radius * Math.sin(angle) + joystick1.offsetHeight / 2;
+            }
+
             message = y;
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '/send-angleV', true);
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
             xhr.send('angleV=' + encodeURIComponent(message));
-
-            if (distance <= radius) {
-                var stickX = x + joystick2.offsetWidth / 2;
-                var stickY = y + joystick2.offsetHeight / 2;
-            } else {
-                var stickX = radius * Math.cos(angle) + joystick2.offsetWidth / 2;
-                var stickY = radius * Math.sin(angle) + joystick2.offsetHeight / 2;
-            }
 
             stick2.style.left = stickX  + 'px';
             stick2.style.top = stickY + 'px';
