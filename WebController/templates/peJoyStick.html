@@ -80,14 +80,23 @@
         var joystick2 = document.getElementById('joystick2');
         var stick2 = document.getElementById('stick2');
 
+        var touchState = 2;
+        var touchNumber = 0;
+
         joystick1.addEventListener('touchstart', function(event) {
             event.preventDefault();
             stick1.style.transition = 'none';
+            if(touchState == 2) {
+                touchState = 0;
+                touchNumber = 0;
+            } else {
+                touchNumber = 2;
+            }
         });
 
         joystick1.addEventListener('touchmove', function(event) {
             event.preventDefault();
-            var touch = event.touches[0];
+            var touch = event.touches[touchState];
             var x = touch.clientX - (joystick1.getBoundingClientRect().left + joystick1.offsetWidth / 2);
             var y = touch.clientY - (joystick1.getBoundingClientRect().top + joystick1.offsetHeight / 2);
             var radius = joystick1.offsetWidth / 2;
@@ -120,6 +129,14 @@
             stick1.style.left = '50%';
             stick1.style.top = '50%';
 
+            if(touchNumber == 2) {
+                touchNumber = 1;
+                touchState = 1;
+            } else {
+                touchNumber = 0;
+                touchState = 2;
+            }
+
             message = 0 + ',' + 0;
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '/send-transV', true);
@@ -130,11 +147,17 @@
         joystick2.addEventListener('touchstart', function(event) {
             event.preventDefault();
             stick2.style.transition = 'none';
+            if(touchState == 2) {
+                touchState = 1;
+                touchNumber = 1;
+            } else {
+                touchNumber = 2;
+            }
         });
 
         joystick2.addEventListener('touchmove', function(event) {
             event.preventDefault();
-            var touch = event.touches[0];
+            var touch = event.touches[1-touchState];
             var x = touch.clientX - (joystick2.getBoundingClientRect().left + joystick2.offsetWidth / 2);
             var y = touch.clientY - (joystick2.getBoundingClientRect().top + joystick2.offsetHeight / 2);
             var radius = joystick2.offsetWidth / 2;
@@ -164,6 +187,15 @@
             stick2.style.transition = 'all 0.3s ease';
             stick2.style.left = '50%';
             stick2.style.top = '50%';
+
+            if(touchNumber == 2) {
+                touchNumber = 1;
+                touchState = 0;
+            } else {
+                touchNumber = 0;
+                touchState = 2;
+            }
+
         });
 
     </script>
