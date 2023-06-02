@@ -37,7 +37,7 @@ def circleRec(image):
 
     #  消除噪声
     opening = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)  # 形态学开运算
-    edges = cv2.Canny(opening, 50, 100)  # 边缘识别
+    edges = cv2.Canny(opening, 50, 200)  # 边缘识别
     # 识别圆形
     circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, 1, 20, param1=50, param2=30, minRadius=15, maxRadius=35)
     if circles is not None:  # 如果识别出圆
@@ -51,9 +51,10 @@ def circleRec(image):
             # if y -  r > 0 and y +  r < size[0] and x -  r > 0 and x +  r < size[1]:
             if y - 1.5 * r > 0 and y + 1.5 * r < size[0] and x - 1.5 * r > 0 and x + 1.5 * r < size[1]:
                 frame = frame[int(y - 1.5 * r):int(y + 1.5 * r), int(x - 1.5 * r):int(x + 1.5 * r)]
+                edgesFrame = edges[int(y - 1.5 * r):int(y + 1.5 * r), int(x - 1.5 * r):int(x + 1.5 * r)]
                 flag = 1
                 print(frame.shape)
-                cv2.imshow('frame', frame)
+                cv2.imshow('frame', edgesFrame)
                 cv2.waitKey(100)
     else:
         # 如果识别不出，显示圆心不存在
@@ -75,7 +76,7 @@ def wallRec(image):
 
     #  消除噪声
     opening = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)  # 形态学开运算
-    edges = cv2.Canny(opening, 50, 100)  # 边缘识别
+    edges = cv2.Canny(opening, 100, 400)  # 边缘识别
     # 识别圆形
     circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, 1, 20, param1=80, param2=40, minRadius=15, maxRadius=55)
     if circles is not None:  # 如果识别出圆
@@ -89,9 +90,10 @@ def wallRec(image):
             # if y -  r > 0 and y +  r < size[0] and x -  r > 0 and x +  r < size[1]:
             if y - 1.5 * r > 0 and y + 1.5 * r < size[0] and x - 1.5 * r > 0 and x + 1.5 * r < size[1]:
                 frame = frame[int(y - 1.5 * r):int(y + 1.5 * r), int(x - 1.5 * r):int(x + 1.5 * r)]
+                edgesFrame = edges[int(y - 1.5 * r):int(y + 1.5 * r), int(x - 1.5 * r):int(x + 1.5 * r)]
                 flag = 1
                 print(frame.shape)
-                cv2.imshow('frame', frame)
+                cv2.imshow('frame', edgesFrame)
                 cv2.waitKey(100)
     else:
         # 如果识别不出，显示圆心不存在

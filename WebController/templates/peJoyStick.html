@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Joystick Demo</title>
+    <style>
+        #joystick {
+            width: 200px;
+            height: 200px;
+            background: #ccc;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #stick {
+            width: 100px;
+            height: 100px;
+            background: #f00;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            touch-action: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Joystick Demo</h1>
+    <div id="joystick">
+        <div id="stick"></div>
+    </div>
+
+    <script>
+        var joystick = document.getElementById('joystick');
+        var stick = document.getElementById('stick');
+
+        joystick.addEventListener('touchstart', function(event) {
+            event.preventDefault();
+            stick.style.transition = 'none';
+        });
+
+        joystick.addEventListener('touchmove', function(event) {
+            event.preventDefault();
+            var touch = event.touches[0];
+            var x = touch.clientX - joystick.offsetLeft;
+            var y = touch.clientY - joystick.offsetTop;
+            var radius = joystick.offsetWidth / 2;
+            var distance = Math.sqrt(Math.pow(x - radius, 2) + Math.pow(y - radius, 2));
+            var angle = Math.atan2(y - radius, x - radius);
+
+            if (distance <= radius) {
+                stick.style.left = (x - stick.offsetWidth / 2) + 'px';
+                stick.style.top = (y - stick.offsetHeight / 2) + 'px';
+            } else {
+                var stickX = Math.cos(angle) * radius + radius - stick.offsetWidth / 2;
+                var stickY = Math.sin(angle) * radius + radius - stick.offsetHeight / 2;
+                stick.style.left = stickX + 'px';
+                stick.style.top = stickY + 'px';
+            }
+        });
+
+        joystick.addEventListener('touchend', function(event) {
+            event.preventDefault();
+            stick.style.transition = 'all 0.3s ease';
+            stick.style.left = '50%';
+            stick.style.top = '50%';
+        });
+    </script>
+</body>
+</html>

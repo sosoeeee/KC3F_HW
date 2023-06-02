@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SocketIO Demo</title>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>SocketIO Demo</h1>
+    <input type="text" id="messageInput" placeholder="Enter a message">
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        var socket = io();
+
+        function sendMessage() {
+            var message = document.getElementById('messageInput').value;
+            socket.emit('message', message);
+        }
+    </script>
+</body>
+</html>

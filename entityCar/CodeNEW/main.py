@@ -7,6 +7,8 @@ import time
 from letterRec import *
 from circleRec import *
 
+controlVariableList = [0, 0, 0, 0]
+controlVariableLast = 0
 
 class Car:
     def __init__(self):
@@ -39,19 +41,27 @@ class PID:
 
 
 def GetWheelSpeed(dots, centre, para, controller):
+    global controlVariableLast
+
     dots[:, 0] = dots[:, 0] - centre
     # print(para)
     # controlVariable = np.dot(dots[:, 0], para) * 0.15  # 误差为正需要右转，左轮加速
     error = np.dot(dots[:, 0], para)
     controlVariable = controller.update(error)
-    # print(controlVariable)
+
+    if abs(controlVariable - controlVariableLast) > 20:
+        controlVariable = controlVariable * 0.5
+
+    controlVariableLast = controlVariable
+    print(controlVariable)
+
     lSpeed = 15 - controlVariable
     rSpeed = 15 + controlVariable
 
-    if lSpeed > 25:
-        lSpeed = 25
-    if rSpeed > 25:
-        rSpeed = 25
+    if abs(lSpeed) > 30:
+        lSpeed = 30 * (lSpeed/abs(lSpeed))
+    if abs(rSpeed) > 30:
+        rSpeed = 30 * (rSpeed/abs(rSpeed))
 
     return [lSpeed, rSpeed]
     # return [0, 0]
@@ -166,7 +176,7 @@ def main():
     cap = cv2.VideoCapture(0)
     lastTime = time.time()
     pathObserver = Path()
-    controller = PID(0.07, 0, 1)
+    controller = PID(0.08, 0, 0.5)
 
     # STATE = {'normal', 'wall', 'cross'}
     state = 'normal'
@@ -177,7 +187,7 @@ def main():
     right_template = cv2.cvtColor(right_template, cv2.COLOR_BGR2GRAY)
 
     wallRecTimer = time.time()
-
+    letterRecTimer = time.time()
     while True:
         currentTime = time.time()
         # 图像采集
@@ -191,7 +201,7 @@ def main():
         # 二值化闭运算
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
         binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
-        binary_ROI = binary[140:480, 220:420]
+        binary_ROI = binary[140:480, 200:440]
 
         # 图像显示
         canny = cv2.Canny(binary_ROI, 50, 150)
@@ -213,7 +223,10 @@ def main():
             color_gray = pathObserver.drawPath(color_gray)
 
             # 检测十字路口
-            crossFlag = crossRec(binary_ROI[100:339, :])
+            if currentTime - letterRecTimer > 2:
+                crossFlag = crossRec(binary_ROI[100:339, :])
+            else:
+                crossFlag = False
 
             # 检测墙面
             if currentTime - wallRecTimer > 4:
@@ -251,14 +264,16 @@ def main():
             if flag:
                 if getLetterRec(frame, left_template, right_template) == '左':
                     print('left')
-                    timerStraight(25, 2)
+                    timerStraight(25, 1.2)
                     timerTurn(25, 1, 1.4)
                     state = 'normal'
                 else:
                     print('right')
-                    timerStraight(25, 2)
+                    timerStraight(25, 1.2)
                     timerTurn(25, 0, 1.4)
                     state = 'normal'
+                letterRecTimer = time.time()
+                wallRecTimer = time.time()
             else:
                 state = 'normal'
 
@@ -277,8 +292,11 @@ def main():
 
         # cv2.imshow("image", color_gray)
         # 显示图像
-        cv2.imshow("image1", caliber_gray[:, 220:420])
-        cv2.waitKey(1)
+        kernel = np.ones((5, 5), np.uint8)  # 卷积核
+        opening = cv2.morphologyEx(caliber_gray[:, 220:420], cv2.MORPH_OPEN, kernel)  # 形态学开运算
+        edges = cv2.Canny(opening, 100, 400)  # 边缘识别
+        cv2.imshow("image1", edges)
+        cv2.waitKey(0)
 
         # tmpTime = time.time()
         # print(1 / (tmpTime - lastTime))
