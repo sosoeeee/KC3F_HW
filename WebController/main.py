@@ -24,7 +24,15 @@ def PCJoyStick():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('test.html')
+
+
+@app.route('/send-message', methods=['POST'])
+def send_message():
+    message = request.form.get('message')
+    # 在这里对接收到的消息进行处理
+    print('Received message:', message)
+    return 'Message received'
 
 
 @socketio.on('message')

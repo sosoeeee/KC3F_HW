@@ -33,14 +33,14 @@
     </div>
 
     <script>
-        var socket = io();
         var joystick = document.getElementById('joystick');
         var stick = document.getElementById('stick');
+
+        var xhr = new XMLHttpRequest();
 
         joystick.addEventListener('touchstart', function(event) {
             event.preventDefault();
             stick.style.transition = 'none';
-            socket.emit('message', 'touchstart');
         });
 
         joystick.addEventListener('touchmove', function(event) {
@@ -61,6 +61,11 @@
                 stick.style.left = stickX + 'px';
                 stick.style.top = stickY + 'px';
             }
+
+            message = 'start';
+            xhr.open('POST', '/send-message', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.send('message=' + encodeURIComponent(message));
         });
 
         joystick.addEventListener('touchend', function(event) {
