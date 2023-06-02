@@ -113,7 +113,7 @@
                 var stickY = radius * Math.sin(angle) + joystick1.offsetHeight / 2;
             }
 
-            message = x + ',' + y;
+            message = x;
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '/send-transV', true);
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -137,7 +137,7 @@
                 touchState = 2;
             }
 
-            message = 0 + ',' + 0;
+            message = 0;
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '/send-transV', true);
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -164,11 +164,11 @@
             var distance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
             var angle = Math.atan2(y, x);
 
-            message = x + ',' + radius * Math.cos(angle) + ',' + y +',' + radius * Math.sin(angle);
+            message = y;
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/send-message', true);
+            xhr.open('POST', '/send-angleV', true);
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-            xhr.send('message=' + encodeURIComponent(message));
+            xhr.send('angleV=' + encodeURIComponent(message));
 
             if (distance <= radius) {
                 var stickX = x + joystick2.offsetWidth / 2;
@@ -187,6 +187,12 @@
             stick2.style.transition = 'all 0.3s ease';
             stick2.style.left = '50%';
             stick2.style.top = '50%';
+
+            message = 0;
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/send-angleV', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.send('angleV=' + encodeURIComponent(message));
 
             if(touchNumber == 2) {
                 touchNumber = 1;
