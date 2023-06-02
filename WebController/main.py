@@ -27,11 +27,11 @@ def index():
     return render_template('test.html')
 
 
-@app.route('/send-message', methods=['POST'])
+@app.route('/send-transV', methods=['POST'])
 def send_message():
-    message = request.form.get('message')
+    message = request.form.get('transV')
     # 在这里对接收到的消息进行处理
-    print('Received message:', message)
+    print('Received transV:', message)
     return 'Message received'
 
 

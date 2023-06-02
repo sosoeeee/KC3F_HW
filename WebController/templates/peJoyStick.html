@@ -79,7 +79,6 @@
         var stick1 = document.getElementById('stick1');
         var joystick2 = document.getElementById('joystick2');
         var stick2 = document.getElementById('stick2');
-        var xhr = new XMLHttpRequest();
 
         joystick1.addEventListener('touchstart', function(event) {
             event.preventDefault();
@@ -107,9 +106,9 @@
 
             message = x + ',' + y;
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/send-message', true);
+            xhr.open('POST', '/send-transV', true);
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-            xhr.send('message=' + encodeURIComponent(message));
+            xhr.send('transV=' + encodeURIComponent(message));
 
             stick1.style.left = stickX  + 'px';
             stick1.style.top = stickY + 'px';
@@ -123,9 +122,9 @@
 
             message = 0 + ',' + 0;
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/send-message', true);
+            xhr.open('POST', '/send-transV', true);
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-            xhr.send('message=' + encodeURIComponent(message));
+            xhr.send('transV=' + encodeURIComponent(message));
         });
 
         joystick2.addEventListener('touchstart', function(event) {
