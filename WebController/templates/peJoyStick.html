@@ -2,70 +2,114 @@
 <html>
 <head>
     <title>Joystick Demo</title>
-    <style>
-        #joystick {
-            width: 200px;
-            height: 200px;
-            background: #ccc;
-            border-radius: 50%;
-            position: relative;
-            overflow: hidden;
-        }
-
-        #stick {
-            width: 100px;
-            height: 100px;
-            background: #f00;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            border-radius: 50%;
-            touch-action: none;
-        }
-    </style>
 </head>
+<style>
+    #frame {
+    border-width: 10px;
+    border-style: solid;
+    border-color: #000;
+    width: 65%;
+    height: 80%;
+    background-color: white;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    }
+
+    #joystick1 {
+    width: 400px;
+    height: 400px;
+    background: #ccc;
+    border-radius: 50%;
+    position: relative;
+    top: 10%;
+    left: 50%;
+    transform: translate(-50%, -0%);
+    }
+
+    #stick1 {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    position: absolute;
+    background-color: red;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    }
+
+    #joystick2 {
+    width: 400px;
+    height: 400px;
+    background: #ccc;
+    border-radius: 50%;
+    position: relative;
+    top: 28%;
+    left: 50%;
+    transform: translate(-50%, -0%);
+    }
+
+    #stick2 {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    position: absolute;
+    background-color: red;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    }
+
+</style>
 <body>
     <h1>Joystick Demo</h1>
-    <div id="joystick">
-        <div id="stick"></div>
+    <div id="frame">
+        <div id="joystick1">
+            <div id="stick1"></div>
+        </div>
+        <div id="joystick2">
+            <div id="stick2"></div>
+        </div>
     </div>
 
-    <script>
-        var joystick = document.getElementById('joystick');
-        var stick = document.getElementById('stick');
 
-        joystick.addEventListener('touchstart', function(event) {
+    <script>
+        var joystick1 = document.getElementById('joystick1');
+        var stick1 = document.getElementById('stick1');
+
+        joystick1.addEventListener('touchstart', function(event) {
             event.preventDefault();
-            stick.style.transition = 'none';
+            stick1.style.transition = 'none';
         });
 
-        joystick.addEventListener('touchmove', function(event) {
+        joystick1.addEventListener('touchmove', function(event) {
             event.preventDefault();
             var touch = event.touches[0];
-            var x = touch.clientX - joystick.offsetLeft;
-            var y = touch.clientY - joystick.offsetTop;
-            var radius = joystick.offsetWidth / 2;
+            var x = touch.clientX - joystick1.offsetLeft;
+            var y = touch.clientY - joystick1.offsetTop;
+            var radius = joystick1.offsetWidth / 2;
             var distance = Math.sqrt(Math.pow(x - radius, 2) + Math.pow(y - radius, 2));
             var angle = Math.atan2(y - radius, x - radius);
 
             if (distance <= radius) {
-                stick.style.left = (x - stick.offsetWidth / 2) + 'px';
-                stick.style.top = (y - stick.offsetHeight / 2) + 'px';
+                stick1.style.left = (x - stick1.offsetWidth / 2) + 'px';
+                stick1.style.top = (y - stick1.offsetHeight / 2) + 'px';
             } else {
-                var stickX = Math.cos(angle) * radius + radius - stick.offsetWidth / 2;
-                var stickY = Math.sin(angle) * radius + radius - stick.offsetHeight / 2;
-                stick.style.left = stickX + 'px';
-                stick.style.top = stickY + 'px';
+                var stickX = Math.cos(angle) * radius + radius - stick1.offsetWidth / 2;
+                var stickY = Math.sin(angle) * radius + radius - stick1.offsetHeight / 2;
+                stick1.style.left = stickX + 'px';
+                stick1.style.top = stickY + 'px';
             }
         });
 
-        joystick.addEventListener('touchend', function(event) {
+        joystick1.addEventListener('touchend', function(event) {
             event.preventDefault();
-            stick.style.transition = 'all 0.3s ease';
-            stick.style.left = '50%';
-            stick.style.top = '50%';
+            stick1.style.transition = 'all 0.3s ease';
+            stick1.style.left = '50%';
+            stick1.style.top = '50%';
         });
+
     </script>
 </body>
 </html>
